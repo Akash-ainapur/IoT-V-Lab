@@ -49,6 +49,7 @@ code.addEventListener('keydown', e => {
 function setStatus(t, cls) { const s = $('status'); s.textContent = t; s.style.borderColor = cls === 'run' ? '#2fe08a' : cls === 'err' ? '#ff5d5d' : ''; }
 function upload() {
   W.audioInit(); const r = ArduinoCompiler.compile(code.value);
+  Auth.rec(exp.id, e => { r.ok ? e.u++ : e.e++; });
   if (!r.ok) {
     errLine = r.line || 0; gutter(); showTab('mCon');
     log('err', (r.line ? 'sketch.ino:' + r.line + ': ' : '') + 'error: ' + r.msg); log('err', 'exit status 1 — Compilation error: ' + r.msg); setStatus('compile error', 'err');
@@ -118,15 +119,15 @@ function checkMission() {
   exp.wires.forEach((w, i) => { const ok = S.same(w[0].replace('ard:GND', 'ard:GND1'), w[1].replace('ard:GND', 'ard:GND1')); const el = $('rq' + i); if (!el) return; el.classList.toggle('ok', ok); el.firstElementChild.textContent = ok ? '✓' : '·'; if (!ok) all = false; });
   (exp.opt || []).forEach((w, i) => { const ok = S.same(w[0].replace('ard:GND', 'ard:GND1'), w[1].replace('ard:GND', 'ard:GND1')); const el = $('ro' + i); if (el) { el.classList.toggle('ok', ok); el.firstElementChild.textContent = ok ? '✓' : '·'; } });
   const ban = $('mBan'); if (ban) ban.innerHTML = all ? '<div class="banner">✅ Circuit complete! Now write / check the code and press ⬆ Upload.</div>' : '';
-  if (all && !missionDone) { missionDone = true; [0, 120, 240].forEach((t, i) => setTimeout(() => W.beep(660 + i * 220, 0.12), t)); log('ok', 'Circuit complete — all required connections are in place.'); }
+  if (all && !missionDone) { missionDone = true; Auth.rec(exp.id, e => { e.d = 1; }); [0, 120, 240].forEach((t, i) => setTimeout(() => W.beep(660 + i * 220, 0.12), t)); log('ok', 'Circuit complete — all required connections are in place.'); }
   if (!all) missionDone = false;
   return all;
 }
 W.onChange = () => { wireList(); checkMission(); };
 $('bHint').onclick = function () {
-  if (W.hintsOn) { W.clearHints(); this.classList.remove('on'); } else { W.showHints(exp.wires.concat(exp.opt || [])); this.classList.add('on'); }
+  if (W.hintsOn) { W.clearHints(); this.classList.remove('on'); } else { W.showHints(exp.wires.concat(exp.opt || [])); this.classList.add('on'); Auth.rec(exp.id, e => { e.h++; }); }
 };
-$('bAuto').onclick = () => { $('bHint').classList.remove('on'); W.autoWire(exp.wires.concat(exp.opt || [])); };
+$('bAuto').onclick = () => { Auth.rec(exp.id, e => { e.a++; }); $('bHint').classList.remove('on'); W.autoWire(exp.wires.concat(exp.opt || [])); };
 $('bClear').onclick = () => { W.clearWires(); };
 $('bView').onclick = () => W.resetView();
 $('speed').onchange = e => { S.speed = +e.target.value; };

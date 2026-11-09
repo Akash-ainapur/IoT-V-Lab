@@ -60,6 +60,11 @@ main{display:flex;height:calc(100% - 52px)}
 .help b{color:var(--txt)}
 .prog{height:3px;background:#1a2748;display:none}.prog div{height:100%;width:0;background:var(--acc);transition:width .1s}
 @media(max-width:1000px){main{flex-direction:column}#side{width:100%;max-width:none;height:55%}#stage{height:45%;flex:none}.help{display:none}}
+.cons{color:var(--mut);font-size:11px;max-width:190px;line-height:1.2;display:inline-block;margin-right:8px;vertical-align:middle}#auth{display:flex;align-items:center}
+.modal{position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:50}
+.modal .box{background:var(--panel);border:1px solid var(--acc);border-radius:14px;padding:22px;width:min(380px,92vw);display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 50px #000}
+.modal h3{margin:0}.modal p{margin:0;color:var(--mut);font-size:13px}.modal label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--mut)}
+.modal input{background:#070c18;border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--txt)}
 </style>
 </head>
 <body>

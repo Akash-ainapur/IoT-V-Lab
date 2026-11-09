@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IoT Lab 3D – Arduino Wiring Simulator</title>
+<style>
+:root{--bg:#0b1220;--panel:#111a2e;--panel2:#162139;--line:#243556;--txt:#e6edf9;--mut:#8fa3c7;--acc:#39e6ff;--acc2:#ffb020;--ok:#35e08a;--bad:#ff5d5d}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font:14px/1.4 "Segoe UI",system-ui,Arial,sans-serif;overflow:hidden}
+button,select,input,textarea{font:inherit;color:inherit}
+header{height:52px;display:flex;align-items:center;gap:10px;padding:0 14px;background:linear-gradient(180deg,#14203a,#0f1830);border-bottom:1px solid var(--line)}
+.logo{font-weight:800;letter-spacing:.3px;font-size:16px;white-space:nowrap}.logo b{color:var(--acc)}
+select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;max-width:420px;min-width:260px}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap;transition:.15s}
+.btn:hover{border-color:var(--acc);background:#1b2a4a}.btn.pri{background:linear-gradient(180deg,#19c3e0,#0e8fb0);border-color:#39e6ff;color:#00131a;font-weight:700}
+.btn.pri:hover{filter:brightness(1.1)}.btn.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}.btn.bad{background:#3a1822;border-color:#7a2e3c}
+.sp{flex:1}
+main{display:flex;height:calc(100% - 52px)}
+#stage{position:relative;flex:1;min-width:0;background:#0b1220}
+#c{width:100%;height:100%;display:block;touch-action:none}
+#side{width:460px;max-width:48vw;display:flex;flex-direction:column;border-left:1px solid var(--line);background:var(--panel)}
+.tabs{display:flex;gap:2px;padding:6px 6px 0;background:#0e1730}
+.tab{padding:7px 14px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--mut);border:1px solid transparent;border-bottom:0;user-select:none}
+.tab.act{background:var(--panel);color:var(--txt);border-color:var(--line)}
+.pane{display:none;flex:1;min-height:0;overflow:auto}.pane.act{display:flex;flex-direction:column}
+#top{flex:1.25;min-height:0;display:flex;flex-direction:column}#bot{flex:.8;min-height:150px;display:flex;flex-direction:column;border-top:2px solid var(--line)}
+.bar{display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ed{flex:1;display:flex;min-height:0;background:#0a1020;position:relative}
+#gut{width:42px;padding:10px 6px 10px 0;text-align:right;color:#4d6190;font:12.5px/18px Consolas,monospace;background:#0c1326;overflow:hidden;user-select:none;white-space:pre}
+#gut .err{color:#fff;background:var(--bad);display:block;border-radius:0 4px 4px 0}
+#code{flex:1;resize:none;border:0;outline:0;background:transparent;padding:10px;font:12.5px/18px Consolas,"Courier New",monospace;color:#d6e4ff;white-space:pre;overflow:auto;tab-size:2}
+.aim{padding:10px 12px;font-size:13px;color:#cfe0ff;background:#0f1a33;border-bottom:1px solid var(--line)}.aim small{color:var(--mut);display:block;margin-top:3px}
+.chip{display:inline-block;background:#1a2a4d;border:1px solid var(--line);border-radius:20px;padding:1px 9px;margin:2px 3px 0 0;font-size:12px;color:#bcd3ff}
+#mission{padding:10px 12px}.req{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:4px;background:#0f1a33;border:1px solid transparent;font-size:13px}
+.req i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#25314f;font-size:12px;flex:none}
+.req.ok{border-color:#1f6b49;background:#0f2a22}.req.ok i{background:var(--ok);color:#00200f;font-weight:900}.req.opt{opacity:.75}
+.req .a{color:var(--acc)}.banner{margin:8px 0;padding:10px 12px;border-radius:10px;background:#122a22;border:1px solid #1f6b49;color:#aef2cf;font-weight:600}
+.wl{margin-top:10px;color:var(--mut);font-size:12px}.wl div{display:flex;align-items:center;gap:6px;padding:2px 0}.wl span.d{width:12px;height:12px;border-radius:50%;flex:none;border:1px solid #fff4}
+.wl button{margin-left:auto;background:none;border:0;color:var(--bad);cursor:pointer}
+#controls{padding:10px 12px}.ctl{background:#0f1a33;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:9px}
+.ctl h4{margin:0 0 6px;font-size:13px;color:var(--acc)}.ctl label{display:flex;justify-content:space-between;color:var(--mut);font-size:12.5px;margin-top:4px}.ctl label b{color:var(--txt);font-weight:600}
+.ctl input[type=range]{width:100%;accent-color:var(--acc)}
+.pal{display:flex;gap:6px;align-items:center}.dot{width:20px;height:20px;border-radius:50%;border:2px solid #fff3;cursor:pointer}.dot.sel{border-color:#fff;box-shadow:0 0 8px #fff8}
+.dot.auto{background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935)}
+.mon{flex:1;min-height:0;overflow:auto;padding:8px 10px;font:12.5px/1.45 Consolas,monospace;white-space:pre-wrap;word-break:break-all;background:#070c18;color:#9ff0b8}
+.mon .err{color:#ff8c8c}.mon .info{color:#9fc3ff}.mon .ok{color:#8cf0b4}
+.sin{display:flex;gap:6px;padding:6px;border-top:1px solid var(--line);background:#0e1730}.sin input[type=text]{flex:1;background:#070c18;border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.sin select{min-width:0;padding:5px 6px}
+#tip{position:absolute;display:none;pointer-events:none;background:#0c1428ee;border:1px solid var(--acc);border-radius:8px;padding:6px 10px;font-size:12.5px;max-width:260px;z-index:5;box-shadow:0 4px 18px #0008}
+#tip b{display:block}#tip span{color:var(--acc2);font-weight:700}#tip em{display:block;color:var(--mut);font-style:normal;font-size:12px}
+.hud{position:absolute;left:12px;top:12px;display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:60%}
+.pill{background:#0c1428dd;border:1px solid var(--line);border-radius:10px;padding:6px 11px;font-size:12.5px;backdrop-filter:blur(4px)}
+.pill.warn{border-color:var(--bad);color:#ffb3b3;background:#3a1219dd;animation:pl 1s infinite alternate}@keyframes pl{to{box-shadow:0 0 14px var(--bad)}}
+.pill.good{border-color:#1f6b49;color:#aef2cf}
+#pins{position:absolute;left:12px;bottom:10px;right:12px;display:flex;gap:3px;flex-wrap:wrap;pointer-events:none}
+.pn{min-width:30px;text-align:center;padding:2px 3px;border-radius:6px;font-size:11px;background:#0c1428cc;border:1px solid var(--line);color:var(--mut)}
+.pn.hi{background:#0e4a35;border-color:#2fe08a;color:#d9ffec}.pn.pw{background:#3c3410;border-color:#ffb020;color:#fff1c8}.pn.in{color:#9ec1ff}
+.help{position:absolute;right:12px;top:12px;font-size:12px;color:var(--mut);background:#0c1428cc;border:1px solid var(--line);border-radius:10px;padding:7px 11px;max-width:280px;line-height:1.5}
+.help b{color:var(--txt)}
+.prog{height:3px;background:#1a2748;display:none}.prog div{height:100%;width:0;background:var(--acc);transition:width .1s}
+@media(max-width:1000px){main{flex-direction:column}#side{width:100%;max-width:none;height:55%}#stage{height:45%;flex:none}.help{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">⚡ IoT&nbsp;Lab&nbsp;<b>3D</b></div>
+  <select id="exp"></select>
+  <button class="btn" id="bHint" title="Show the required connections as ghost wires">💡 Hint</button>
+  <button class="btn" id="bAuto" title="Place all the wires for you">🪄 Auto-wire</button>
+  <button class="btn bad" id="bClear">🗑 Clear wires</button>
+  <button class="btn" id="bView">🎥 Reset view</button>
+  <div class="sp"></div>
+  <div id="auth"></div>
+  <label style="color:var(--mut);font-size:12.5px">Speed <select id="speed" style="min-width:0"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10">10×</option></select></label>
+</header>
+<main>
+  <section id="stage">
+    <canvas id="c"></canvas>
+    <div id="tip"></div>
+    <div class="hud" id="hud"></div>
+    <div class="help"><b>How to play</b><br>① Drag from one pin to another to lay a wire (or click pin → click pin)<br>② Double-click / right-click a wire to remove it<br>③ Write your sketch → <b>Upload</b> → the virtual Uno runs it<br>Left-drag = orbit · Right-drag = pan · Wheel = zoom</div>
+    <div id="pins"></div>
+  </section>
+  <aside id="side">
+    <div id="top">
+      <div class="tabs"><div class="tab act" data-p="pCode">📝 Code</div><div class="tab" data-p="pMission">🎯 Mission</div><div class="tab" data-p="pCtl">🎛 Controls</div></div>
+      <div class="pane act" id="pCode">
+        <div class="aim" id="aim"></div>
+        <div class="bar">
+          <button class="btn pri" id="bUp">⬆ Upload</button>
+          <button class="btn" id="bStop">■ Stop</button>
+          <button class="btn" id="bReset" title="Restart the sketch (like pressing RESET on the board)">↻ Reset</button>
+          <button class="btn" id="bSample" title="Reload the code printed in the lab manual">📖 Manual code</button>
+          <span id="status" class="chip">idle</span>
+        </div>
+        <div class="prog" id="prog"><div></div></div>
+        <div class="ed"><div id="gut"></div><textarea id="code" spellcheck="false" wrap="off"></textarea></div>
+      </div>
+      <div class="pane" id="pMission"><div id="mission"></div></div>
+      <div class="pane" id="pCtl"><div id="controls"></div></div>
+    </div>
+    <div id="bot">
+      <div class="tabs"><div class="tab act" data-p="mSer">📟 Serial Monitor</div><div class="tab" data-p="mCon">🖥 Console</div></div>
+      <div class="pane act" id="mSer">
+        <div class="mon" id="ser"></div>
+        <div class="sin"><input type="text" id="serIn" placeholder="Type here and press Enter to send to the Arduino…">
+          <button class="btn" id="serSend">Send</button>
+          <select id="le"><option value="\n">Newline</option><option value="">No line ending</option><option value="\r\n">Both NL &amp; CR</option></select>
+          <select id="baud"><option>300</option><option>1200</option><option>2400</option><option>4800</option><option selected>9600</option><option>19200</option><option>38400</option><option>57600</option><option>115200</option></select>
+          <button class="btn" id="serClr">Clear</button></div>
+      </div>
+      <div class="pane" id="mCon"><div class="mon" id="con" style="color:#cfe0ff"></div></div>
+    </div>
+  </aside>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>window.THREE.OrbitControls = window.THREE.OrbitControls || null;</script>
+<script src="sim.js"></script>
+<script src="compiler.js"></script>
+<script src="experiments.js"></script>
+<script src="parts.js"></script>
+<script src="world.js"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

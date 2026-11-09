@@ -26,7 +26,7 @@ function showProfile() {
   if (document.getElementById('profModal')) return;
   const m = getCache() || {};
   const ov = document.createElement('div'); ov.id = 'profModal'; ov.className = 'modal';
-  ov.innerHTML = '<form class="box"><h3>👋 One quick thing</h3><p>Your lab progress is recorded for your instructor (experiments opened, completed, uploads, errors, hint use).</p>'
+  ov.innerHTML = '<form class="box"><h3>👋 One quick thing</h3><p>Help us build more projects like this: we note who uses it, which experiments you open and finish, and where things break (errors, hints). Just a few details to start:</p>'
     + '<label>Full name<input name="n" required maxlength="60"></label><label>USN<input name="usn" required maxlength="20" placeholder="1MJ22CS014" style="text-transform:uppercase"></label>'
     + '<label>Section / Class<input name="sec" required maxlength="20" placeholder="CSE 7 A"></label><button class="btn pri" type="submit">Save &amp; continue</button></form>';
   document.body.appendChild(ov);
@@ -45,7 +45,7 @@ function refresh() {
   const box = document.getElementById('auth'); if (!box) return;
   box.innerHTML = '';
   if (A.signedIn) { const d = document.createElement('div'); box.appendChild(d); window.Clerk.mountUserButton(d); }
-  else { const b = document.createElement('button'); b.className = 'btn pri'; b.textContent = '🔐 Sign in'; b.onclick = A.prompt; box.appendChild(b); const n = document.createElement('small'); n.className = 'cons'; n.textContent = 'Signing in records your lab progress for your instructor.'; box.prepend(n); }
+  else { const b = document.createElement('button'); b.className = 'btn pri'; b.textContent = '🔐 Sign in'; b.onclick = A.prompt; box.appendChild(b); const n = document.createElement('small'); n.className = 'cons'; n.textContent = 'Sign in to unlock all experiments. We note who uses what and where it breaks, to build more projects like this.'; box.prepend(n); }
   if (A.signedIn) ensureProfile();
   if (A.onChange) A.onChange(A.signedIn);
 }

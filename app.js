@@ -179,6 +179,25 @@ setInterval(() => {
   checkMission();
 }, 150);
 
+/* ---------- fun: don't click the black block ---------- */
+let bombBusy = false;
+W.onBomb = () => {
+  if (bombBusy) return; bombBusy = true; W.audioInit(); W.explode();
+  setTimeout(() => {
+    const ov = document.createElement('div'); ov.className = 'modal'; ov.id = 'bomb';
+    const msg = encodeURIComponent("Hey! I clicked the 'DON'T CLICK ME' block and destroyed the Arduino 💥 Here's my ₹100 for the damage 😅");
+    ov.innerHTML = '<div class="box" style="text-align:center;border-color:#ff5050"><div style="font-size:46px">💥</div><h3>BOOM! I told you not to click it!</h3>'
+      + '<p>You just destroyed the Arduino. Please send <b style="color:#ffb020">₹100</b> for the damages 😤</p>'
+      + '<a class="btn pri" id="bombPay" target="_blank" rel="noopener" href="https://wa.me/918317366952?text=' + msg + '" style="text-decoration:none">💸 Pay ₹100 on WhatsApp</a>'
+      + '<p id="bombT" style="font-size:12px">…or wait <b>5</b>s and I might rebuild it 😉</p></div>';
+    document.body.appendChild(ov);
+    let n = 5; const t = $('bombT').querySelector('b');
+    const done = (txt) => { clearInterval(iv); setTimeout(() => { W.restore(); ov.remove(); bombBusy = false; log('info', txt); }, 0); };
+    const iv = setInterval(() => { n--; t.textContent = n; if (n <= 0) done('Board rebuilt. Just kidding 😄'); }, 1000);
+    $('bombPay').addEventListener('click', () => { clearInterval(iv); setTimeout(() => { W.restore(); ov.remove(); bombBusy = false; }, 1200); });
+  }, 900);
+};
+
 /* ---------- boot ---------- */
 W.init($('c'));
 const last = +store.get('iot3d:last');

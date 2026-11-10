@@ -83,7 +83,12 @@ function buildArduino() {
   [[-2.1, -9.3, 10], [8.5, -9.3, 8], [-0.5, 9.3, 8], [8.1, 9.3, 6]].forEach(([hx, hz, w]) => U.B(g, w, 2.4, 1.2, U.mat(0x15171c), hx, 2.5, hz));
   // parts
   U.B(g, 7.6, 4.6, 5.4, U.mat(0xc5cad2, {metalness: 0.9, roughness: 0.3}), -11.6, 3.5, -4.2);          // USB
-  U.B(g, 8, 4.4, 5.6, U.mat(0x1b1b1f), -11.8, 3.4, 4.8);                                                  // DC jack
+  const jack = U.B(g, 8, 4.4, 5.6, U.mat(0x1b1b1f), -11.8, 3.4, 4.8);                                       // DC jack = the forbidden button
+  jack.userData.bomb = true; P.picks.push(jack); permHits.push(jack);
+  const lc = document.createElement('canvas'); lc.width = 512; lc.height = 128; const lx = lc.getContext('2d');
+  lx.fillStyle = '#d61f2c'; lx.beginPath(); lx.roundRect ? lx.roundRect(6, 10, 500, 100, 28) : lx.rect(6, 10, 500, 100); lx.fill(); lx.lineWidth = 5; lx.strokeStyle = '#fff'; lx.stroke();
+  lx.fillStyle = '#fff'; lx.font = 'bold 54px Arial'; lx.textAlign = 'center'; lx.textBaseline = 'middle'; lx.fillText("⚠ DON'T CLICK ME", 256, 62);
+  const lbl = new T.Sprite(new T.SpriteMaterial({map: new T.CanvasTexture(lc), transparent: true, depthTest: false})); lbl.scale.set(13, 3.25, 1); lbl.position.set(-11.8, 10, 4.8); lbl.renderOrder = 10; g.add(lbl); W.bombLabel = lbl;
   U.B(g, 9, 1, 2.8, U.mat(0x111317), 6, 1.8, 0.4);                                                         // ATmega
   U.B(g, 2.6, 0.8, 1.3, U.mat(0xc9ccd2, {metalness: 0.9}), -6.5, 1.7, 3.5);                               // crystal
   const rst = U.Cy(g, 0.9, 0.9, 0.9, U.mat(0xd22d2d), -6.0, 2.0, -6.6, 16); rst.userData.reset = true; P.picks.push(rst); permHits.push(rst);
@@ -137,7 +142,7 @@ function buildBreadboard() {
 /* ---------- experiment loading ---------- */
 W.loadExperiment = function (exp) {
   for (const c of S.comps) scene.remove(c.group);
-  S.stop(); S.removeCompTerms(); P.hits.length = 0; P.picks.length = 0; P.picks.push(...permHits.filter(h => h.userData.reset));
+  S.stop(); S.removeCompTerms(); P.hits.length = 0; P.picks.length = 0; P.picks.push(...permHits.filter(h => h.userData.reset || h.userData.bomb));
   W.clearWires(true); W.clearHints();
   const comps = exp.comps.map(o => P.build(o.type, o));
   let x = -35, z = 21, rowD = 0, maxZ = 20;
@@ -232,6 +237,7 @@ function bindEvents() {
       const o = ac.obj.userData;
       if (o.press) { e.stopImmediatePropagation(); o.press.state.pressed = true; S.dirty = true; pickAct = {type: 'press', c: o.press}; canvas.setPointerCapture(e.pointerId); return; }
       if (o.pot) { e.stopImmediatePropagation(); pickAct = {type: 'pot', c: o.pot, x: e.clientX, y: e.clientY}; canvas.setPointerCapture(e.pointerId); return; }
+      if (o.bomb) { e.stopImmediatePropagation(); if (W.onBomb) W.onBomb(); return; }
       if (o.reset) { e.stopImmediatePropagation(); S.resetSketch(); W.beep(400, 0.1); return; }
     }
     pending = null;
@@ -281,9 +287,40 @@ function updateHover(e) {
   } else if (hoverWire) {
     t.innerHTML = '<b>Wire</b><em>double-click or right-click to remove</em>'; t.style.display = 'block';
   } else if (ac) {
-    const o = ac.obj.userData; t.innerHTML = '<b>' + (o.press ? 'Hold to press the switch' : o.pot ? 'Drag to turn the knob' : 'Reset button') + '</b>'; t.style.display = 'block';
+    const o = ac.obj.userData; t.innerHTML = '<b>' + (o.press ? 'Hold to press the switch' : o.pot ? 'Drag to turn the knob' : o.bomb ? "Whatever you do… don't click me 😈" : 'Reset button') + '</b>'; t.style.display = 'block';
   } else t.style.display = 'none';
   const r = canvas.getBoundingClientRect(); t.style.left = Math.min(e.clientX - r.left + 16, r.width - 230) + 'px'; t.style.top = (e.clientY - r.top + 16) + 'px';
+}
+
+/* ---------- fun: board explosion ---------- */
+let boom = null;
+W.exploding = () => !!boom;
+W.explode = function () {
+  if (boom) return; const g = W.arduino; const items = [];
+  g.children.forEach(m => {
+    if (!m.isMesh || (m.material && m.material.visible === false)) return;
+    const dir = new T.Vector3(m.position.x + (Math.random() - 0.5) * 6, 0, m.position.z + (Math.random() - 0.5) * 6).normalize();
+    const sp = 10 + Math.random() * 26;
+    items.push({m, p: m.position.clone(), r: m.rotation.clone(), v: new T.Vector3(dir.x * sp, 14 + Math.random() * 30, dir.z * sp), s: new T.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14)});
+  });
+  const flash = U.glow(scene, 0xffa030, 10, g.position.x, 6, g.position.z); flash.material.opacity = 1;
+  const ringM = new T.Mesh(new T.TorusGeometry(1, 0.35, 8, 40), new T.MeshBasicMaterial({color: 0xffc060, transparent: true, opacity: 0.9})); ringM.rotation.x = Math.PI / 2; ringM.position.set(g.position.x, 2, g.position.z); scene.add(ringM);
+  wireGroup.visible = false; boom = {items, t: 0, flash, ringM};
+  if (actx) { const n = actx.sampleRate * 0.9, b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.2); const s = actx.createBufferSource(), gn = actx.createGain(); s.buffer = b; gn.gain.value = 0.5; s.connect(gn); gn.connect(actx.destination); s.start(); }
+};
+W.restore = function () {
+  if (!boom) return; for (const it of boom.items) { it.m.position.copy(it.p); it.m.rotation.copy(it.r); }
+  scene.remove(boom.flash); scene.remove(boom.ringM); scene.position.set(0, 0, 0); wireGroup.visible = true; boom = null; W.beep(660, 0.12);
+};
+function updateBoom(dt) {
+  const b = boom; b.t += dt;
+  for (const it of b.items) {
+    it.v.y -= 55 * dt; it.m.position.addScaledVector(it.v, dt); it.m.rotation.x += it.s.x * dt; it.m.rotation.y += it.s.y * dt; it.m.rotation.z += it.s.z * dt;
+    const floor = W.arduino.position.y * 0 + 0.3 - 0; if (it.m.position.y < floor) { it.m.position.y = floor; it.v.multiplyScalar(0.35); it.v.y = Math.abs(it.v.y) * 0.3; it.s.multiplyScalar(0.7); }
+  }
+  b.flash.material.opacity = Math.max(0, 1 - b.t * 1.6); b.flash.scale.setScalar(10 + b.t * 70);
+  const rs = 1 + b.t * 38; b.ringM.scale.set(rs, rs, rs); b.ringM.material.opacity = Math.max(0, 0.9 - b.t * 1.4);
+  const k = Math.max(0, 0.6 - b.t) * 2.2; scene.position.set((Math.random() - 0.5) * k, (Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
 }
 
 /* ---------- frame ---------- */
@@ -303,6 +340,8 @@ function frame(now) {
   const h = drag && drag.moved ? hoverTerm : hoverTerm || pending;
   const rp = pending && !hoverTerm ? pending : hoverTerm;
   if (rp && S.terms.has(rp)) { const p = termPos(rp); ring.position.copy(p); ring.position.y += 0.1; ring.visible = true; ring.scale.setScalar(1 + Math.sin(t0 * 8) * 0.12); } else ring.visible = false;
+  if (W.bombLabel) { W.bombLabel.visible = !boom; W.bombLabel.scale.set(13 * (1 + Math.sin(t0 * 5) * 0.04), 3.25 * (1 + Math.sin(t0 * 5) * 0.04), 1); }
+  if (boom) updateBoom(dt);
   controls.update(); renderer.render(scene, camera);
 }
 W.camera = () => camera;
